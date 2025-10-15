@@ -1,0 +1,69 @@
+version: "3.8"
+
+networks:
+  delta-network:
+    driver: bridge
+
+services:
+  minio:
+    image: minio/minio
+    container_name: delta-minio
+    hostname: minio
+    networks:
+      delta-network:
+        aliases:
+          - minio
+          - s3.localhost
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: admin
+      MINIO_ROOT_PASSWORD: password123
+      MINIO_SERVER_URL: http://localhost:9000
+      MINIO_BROWSER_REDIRECT_URL: http://localhost:9001
+    command: server /data --console-address ":9001"
+    volumes:
+      - ./minio_data:/data
+  
+  spark:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: spark
+    networks:
+      - delta-network
+    depends_on:
+      - minio
+    environment:
+      - SPARK_MODE=master
+      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+      - SPARK_RPC_ENCRYPTION_ENABLED=no
+      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+      - SPARK_SSL_ENABLED=no
+    ports:
+      - "4040:4040"  
+      - "7077:7077"  
+      - "8088:8088"
+    volumes:
+      - ./spark-app:/opt/spark-app
+    command: sleep infinity
+  
+  delta-sharing:
+    image: deltaio/delta-sharing-server:0.7.8
+    container_name: delta-sharing-server
+    networks:
+      - delta-network
+    ports:
+      - "8080:80"
+    volumes:
+      - ./share.yaml:/share.yaml
+      - ./core-site.xml:/opt/docker/conf/core-site.xml
+    environment:
+      - AWS_ACCESS_KEY_ID=admin
+      - AWS_SECRET_ACCESS_KEY=password123
+      - AWS_REGION=us-east-1
+      - AWS_S3_ENDPOINT=http://delta-minio:9000
+      - AWS_S3_FORCE_PATH_STYLE=true
+      - HADOOP_CONF_DIR=/opt/docker/conf
+    command: ["--config", "/share.yaml"]

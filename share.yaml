@@ -1,0 +1,17 @@
+version: 1.0
+
+# Authorization configuration
+authorization:
+  bearerToken: "powerbi_token_123"
+
+# Pre-signed URL timeout (in seconds)
+preSignedUrlTimeoutSeconds: 3600
+
+shares:
+  - name: sales_share
+    schemas:
+      - name: gold
+        tables:
+          - name: sales_gold
+            location: s3a://onelake/gold/sales_gold
+            id: sales_gold_table_001
