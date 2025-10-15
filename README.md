@@ -296,7 +296,7 @@ This project is for demonstration purposes.
 
 ## 👥 Contributors
 
-- Initial setup: [Your Name]
+- Initial setup: Nguyen Nhu Hoang Tien
 - Date: October 15, 2025
 
 ## 📧 Support
